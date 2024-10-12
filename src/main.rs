@@ -1,3 +1,4 @@
+use colored::*;
 use itertools::Itertools;
 use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{EnumCount, EnumIter};
@@ -93,18 +94,18 @@ enum Color {
 }
 
 // Initial positions
-const PAWN_WHITE_INITIAL: Bits = 0x000000000000FF00;
-const PAWN_BLACK_INITIAL: Bits = 0x00FF000000000000;
-const KNIGHT_WHITE_INITIAL: Bits = 0x0000000000000042;
-const KNIGHT_BLACK_INITIAL: Bits = 0x4200000000000000;
-const BISHOP_WHITE_INITIAL: Bits = 0x0000000000000024;
-const BISHOP_BLACK_INITIAL: Bits = 0x2400000000000000;
-const ROOK_WHITE_INITIAL: Bits = 0x0000000000000081;
-const ROOK_BLACK_INITIAL: Bits = 0x8100000000000000;
-const QUEEN_WHITE_INITIAL: Bits = 0x0000000000000010;
-const QUEEN_BLACK_INITIAL: Bits = 0x1000000000000000;
-const KING_WHITE_INITIAL: Bits = 0x000000000000008;
-const KING_BLACK_INITIAL: Bits = 0x800000000000000;
+const PAWN_WHITE_INITIAL: Bits = 0x202020202020202;
+const PAWN_BLACK_INITIAL: Bits = 0x4040404040404040;
+const KNIGHT_WHITE_INITIAL: Bits = 0x1000000000100;
+const KNIGHT_BLACK_INITIAL: Bits = 0x80000000008000;
+const BISHOP_WHITE_INITIAL: Bits = 0x00010000010000;
+const BISHOP_BLACK_INITIAL: Bits = 0x00800000800000;
+const ROOK_WHITE_INITIAL: Bits = 0x100000000000001;
+const ROOK_BLACK_INITIAL: Bits = 0x8000000000000080;
+const QUEEN_WHITE_INITIAL: Bits = 0x0000000001000000;
+const QUEEN_BLACK_INITIAL: Bits = 0x0000000080000000;
+const KING_WHITE_INITIAL: Bits = 0x0000000100000000;
+const KING_BLACK_INITIAL: Bits = 0x0000008000000000;
 
 // ToDo: Print board
 // ToDo: Implement generating possible moves
@@ -134,25 +135,52 @@ impl State {
     }
 
     pub fn print(&self) {
-        let occupied_squares = self.get_occupied_squares();
-        for (square_index, square) in Square::iter().enumerate() {
-            if square_index != 0 && square_index % 8 == 0 {
-                print!("\n");
-            }
+        use Square::*;
+        self.print_rank(&[A8, B8, C8, D8, E8, F8, G8, H8]);
+        self.print_rank(&[A7, B7, C7, D7, E7, F7, G7, H7]);
+        self.print_rank(&[A6, B6, C6, D6, E6, F6, G6, H6]);
+        self.print_rank(&[A5, B5, C5, D5, E5, F5, G5, H5]);
+        self.print_rank(&[A4, B4, C4, D4, E4, F4, G4, H4]);
+        self.print_rank(&[A3, B3, C3, D3, E3, F3, G3, H3]);
+        self.print_rank(&[A2, B2, C2, D2, E2, F2, G2, H2]);
+        self.print_rank(&[A1, B1, C1, D1, E1, F1, G1, H1]);
+    }
 
-            if !Self::has_piece_on_square(occupied_squares, square) {
-                print!(". ");
-                continue;
-            }
-
-            for (piece, color) in PieceType::iter().cartesian_product(Color::iter()) {
-                if Self::has_piece_on_square(self.get_bitboard_for(piece, color), square) {
-                    print!("x");
-                    break;
-                }
-            }
-            print!(" ")
+    // todo move printing to another struct
+    fn print_rank(&self, squares: &[Square]) {
+        for square in squares {
+            self.print_square(*square);
         }
+        print!("\n");
+    }
+
+    fn print_square(&self, square: Square) {
+        for (piece, color) in PieceType::iter().cartesian_product(Color::iter()) {
+            if Self::has_piece_on_square(self.get_bitboard_for(piece, color), square) {
+                self.print_piece(piece, color);
+                return;
+            }
+        }
+        print!(". ");
+    }
+
+    fn print_piece(&self, piece: PieceType, color: Color) {
+        use PieceType::*;
+        let piece_char = match piece {
+            Pawn => "P",
+            Knight => "N",
+            Bishop => "B",
+            Rook => "R",
+            Queen => "Q",
+            King => "K",
+        };
+
+        let print_color = match color {
+            Color::White => "green",
+            _ => "red",
+        };
+
+        print!("{} ", piece_char.color(print_color));
     }
 
     fn get_bitboard_for(&self, piece: PieceType, color: Color) -> Bits {
@@ -161,13 +189,6 @@ impl State {
 
     fn get_index_for(&self, piece: PieceType, color: Color) -> usize {
         piece as usize + (PieceType::COUNT * color as usize)
-    }
-    fn get_occupied_squares(&self) -> Bits {
-        let mut occupied_squares: Bits = 0;
-        for bitboard in self.bitboards.iter() {
-            occupied_squares = occupied_squares | bitboard
-        }
-        occupied_squares
     }
 
     fn has_piece_on_square(bitboard: Bits, square: Square) -> bool {
