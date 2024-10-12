@@ -130,8 +130,8 @@ impl State {
         }
     }
 
-    pub fn has_piece_on_square(bitboard: Bits, square: &Square) -> bool {
-        (bitboard & (1 << square.clone() as Index)) != 0
+    pub fn has_piece_on_square(bitboard: Bits, square: Square) -> bool {
+        (bitboard & (1 << square as Index)) != 0
     }
 
     pub fn get_bitboard_for(&self, piece: PieceType, color: Color) -> Bits {
@@ -140,5 +140,91 @@ impl State {
 
     fn get_index_for(&self, piece: PieceType, color: Color) -> usize {
         piece as usize + (PieceType::COUNT * color as usize)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::board::state::Color::{Black, White};
+    use crate::board::state::PieceType::{Bishop, King, Knight, Pawn, Queen, Rook};
+    use Square::*;
+
+    #[test]
+    fn test_initial_position_pawns() {
+        let state: State = State::new();
+        let white_pawn = state.get_bitboard_for(Pawn, White);
+        assert!(State::has_piece_on_square(white_pawn, A2));
+        assert!(State::has_piece_on_square(white_pawn, B2));
+        assert!(State::has_piece_on_square(white_pawn, C2));
+        assert!(State::has_piece_on_square(white_pawn, D2));
+        assert!(State::has_piece_on_square(white_pawn, E2));
+        assert!(State::has_piece_on_square(white_pawn, F2));
+        assert!(State::has_piece_on_square(white_pawn, G2));
+        assert!(State::has_piece_on_square(white_pawn, H2));
+
+        let black_pawn = state.get_bitboard_for(Pawn, Black);
+        assert!(State::has_piece_on_square(black_pawn, A7));
+        assert!(State::has_piece_on_square(black_pawn, B7));
+        assert!(State::has_piece_on_square(black_pawn, C7));
+        assert!(State::has_piece_on_square(black_pawn, D7));
+        assert!(State::has_piece_on_square(black_pawn, E7));
+        assert!(State::has_piece_on_square(black_pawn, F7));
+        assert!(State::has_piece_on_square(black_pawn, G7));
+        assert!(State::has_piece_on_square(black_pawn, H7));
+    }
+
+    #[test]
+    fn test_initial_position_knights() {
+        let state: State = State::new();
+        let bitboard = state.get_bitboard_for(Knight, White);
+        assert!(State::has_piece_on_square(bitboard, B1));
+        assert!(State::has_piece_on_square(bitboard, G1));
+
+        let bitboard = state.get_bitboard_for(Knight, Black);
+        assert!(State::has_piece_on_square(bitboard, B8));
+        assert!(State::has_piece_on_square(bitboard, G8));
+    }
+
+    #[test]
+    fn test_initial_position_white_bishops() {
+        let state: State = State::new();
+        let bitboard = state.get_bitboard_for(Bishop, White);
+        assert!(State::has_piece_on_square(bitboard, C1));
+        assert!(State::has_piece_on_square(bitboard, F1));
+
+        let bitboard = state.get_bitboard_for(Bishop, Black);
+        assert!(State::has_piece_on_square(bitboard, C8));
+        assert!(State::has_piece_on_square(bitboard, F8));
+    }
+
+    #[test]
+    fn test_initial_position_white_rooks() {
+        let state: State = State::new();
+        let bitboard = state.get_bitboard_for(Rook, White);
+        assert!(State::has_piece_on_square(bitboard, A1));
+        assert!(State::has_piece_on_square(bitboard, H1));
+
+        let bitboard = state.get_bitboard_for(Rook, Black);
+        assert!(State::has_piece_on_square(bitboard, A8));
+        assert!(State::has_piece_on_square(bitboard, H8));
+    }
+
+    #[test]
+    fn test_initial_position_white_queen() {
+        let state: State = State::new();
+        let bitboard = state.get_bitboard_for(Queen, White);
+        assert!(State::has_piece_on_square(bitboard, D1));
+        let bitboard = state.get_bitboard_for(Queen, Black);
+        assert!(State::has_piece_on_square(bitboard, D8));
+    }
+
+    #[test]
+    fn test_initial_position_white_king() {
+        let state: State = State::new();
+        let bitboard = state.get_bitboard_for(King, White);
+        assert!(State::has_piece_on_square(bitboard, E1));
+        let bitboard = state.get_bitboard_for(King, Black);
+        assert!(State::has_piece_on_square(bitboard, E8));
     }
 }
