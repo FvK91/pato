@@ -1,8 +1,13 @@
+use crate::board::bitboard::{
+    Bitboard, B_B_INIT, B_W_INIT, K_B_INIT, K_W_INIT, N_B_INIT, N_W_INIT, P_B_INIT, P_W_INIT,
+    Q_B_INIT, Q_W_INIT, R_B_INIT, R_W_INIT,
+};
+
 use strum::EnumCount;
 use strum_macros::{EnumCount, EnumIter};
 
 #[derive(EnumIter, Clone, Copy)]
-#[repr(u8)]
+#[repr(i8)]
 pub enum Square {
     A1,
     A2,
@@ -85,56 +90,31 @@ pub enum Color {
     White,
     Black,
 }
-
-type Bits = u64;
-type Index = u8;
-
-// Going for Little-Endian Rank-File Mapping now.
-// Why? No clue (yet)
-
-// Initial positions
-const PAWN_WHITE_INITIAL: Bits = 0x202020202020202;
-const PAWN_BLACK_INITIAL: Bits = 0x4040404040404040;
-const KNIGHT_WHITE_INITIAL: Bits = 0x1000000000100;
-const KNIGHT_BLACK_INITIAL: Bits = 0x80000000008000;
-const BISHOP_WHITE_INITIAL: Bits = 0x00010000010000;
-const BISHOP_BLACK_INITIAL: Bits = 0x00800000800000;
-const ROOK_WHITE_INITIAL: Bits = 0x100000000000001;
-const ROOK_BLACK_INITIAL: Bits = 0x8000000000000080;
-const QUEEN_WHITE_INITIAL: Bits = 0x0000000001000000;
-const QUEEN_BLACK_INITIAL: Bits = 0x0000000080000000;
-const KING_WHITE_INITIAL: Bits = 0x0000000100000000;
-const KING_BLACK_INITIAL: Bits = 0x0000008000000000;
-
 pub struct State {
-    bitboards: [Bits; PieceType::COUNT * Color::COUNT],
+    bitboards: [Bitboard; PieceType::COUNT * Color::COUNT],
 }
 
 impl State {
     pub fn new() -> Self {
         State {
             bitboards: [
-                PAWN_WHITE_INITIAL,
-                KNIGHT_WHITE_INITIAL,
-                BISHOP_WHITE_INITIAL,
-                ROOK_WHITE_INITIAL,
-                QUEEN_WHITE_INITIAL,
-                KING_WHITE_INITIAL,
-                PAWN_BLACK_INITIAL,
-                KNIGHT_BLACK_INITIAL,
-                BISHOP_BLACK_INITIAL,
-                ROOK_BLACK_INITIAL,
-                QUEEN_BLACK_INITIAL,
-                KING_BLACK_INITIAL,
+                Bitboard::from_squares(&P_W_INIT),
+                Bitboard::from_squares(&N_W_INIT),
+                Bitboard::from_squares(&B_W_INIT),
+                Bitboard::from_squares(&R_W_INIT),
+                Bitboard::from_squares(&Q_W_INIT),
+                Bitboard::from_squares(&K_W_INIT),
+                Bitboard::from_squares(&P_B_INIT),
+                Bitboard::from_squares(&N_B_INIT),
+                Bitboard::from_squares(&B_B_INIT),
+                Bitboard::from_squares(&R_B_INIT),
+                Bitboard::from_squares(&Q_B_INIT),
+                Bitboard::from_squares(&K_B_INIT),
             ],
         }
     }
 
-    pub fn has_piece_on_square(bitboard: Bits, square: Square) -> bool {
-        (bitboard & (1 << square as Index)) != 0
-    }
-
-    pub fn get_bitboard_for(&self, piece: PieceType, color: Color) -> Bits {
+    pub fn get_bitboard_for(&self, piece: PieceType, color: Color) -> Bitboard {
         self.bitboards[self.get_index_for(piece, color)]
     }
 
@@ -151,80 +131,66 @@ mod tests {
     use Square::*;
 
     #[test]
+    fn test_bitboard_from_square() {
+        let bitboard_d7 = Bitboard::from_squares(&[E5]);
+        assert!(bitboard_d7.squares_occupied(&[E5]));
+    }
+
+    #[test]
     fn test_initial_position_pawns() {
         let state: State = State::new();
         let white_pawn = state.get_bitboard_for(Pawn, White);
-        assert!(State::has_piece_on_square(white_pawn, A2));
-        assert!(State::has_piece_on_square(white_pawn, B2));
-        assert!(State::has_piece_on_square(white_pawn, C2));
-        assert!(State::has_piece_on_square(white_pawn, D2));
-        assert!(State::has_piece_on_square(white_pawn, E2));
-        assert!(State::has_piece_on_square(white_pawn, F2));
-        assert!(State::has_piece_on_square(white_pawn, G2));
-        assert!(State::has_piece_on_square(white_pawn, H2));
+        assert!(white_pawn.squares_occupied(&[A2, B2, C2, D2, E2, F2, G2, H2]));
 
         let black_pawn = state.get_bitboard_for(Pawn, Black);
-        assert!(State::has_piece_on_square(black_pawn, A7));
-        assert!(State::has_piece_on_square(black_pawn, B7));
-        assert!(State::has_piece_on_square(black_pawn, C7));
-        assert!(State::has_piece_on_square(black_pawn, D7));
-        assert!(State::has_piece_on_square(black_pawn, E7));
-        assert!(State::has_piece_on_square(black_pawn, F7));
-        assert!(State::has_piece_on_square(black_pawn, G7));
-        assert!(State::has_piece_on_square(black_pawn, H7));
+        assert!(black_pawn.squares_occupied(&[A7, B7, C7, D7, E7, F7, G7, H7]));
     }
 
     #[test]
     fn test_initial_position_knights() {
         let state: State = State::new();
-        let bitboard = state.get_bitboard_for(Knight, White);
-        assert!(State::has_piece_on_square(bitboard, B1));
-        assert!(State::has_piece_on_square(bitboard, G1));
+        let white_knight = state.get_bitboard_for(Knight, White);
+        assert!(white_knight.squares_occupied(&[B1, G1]));
 
-        let bitboard = state.get_bitboard_for(Knight, Black);
-        assert!(State::has_piece_on_square(bitboard, B8));
-        assert!(State::has_piece_on_square(bitboard, G8));
+        let black_knight = state.get_bitboard_for(Knight, Black);
+        assert!(black_knight.squares_occupied(&[B8, G8]));
     }
 
     #[test]
     fn test_initial_position_white_bishops() {
         let state: State = State::new();
-        let bitboard = state.get_bitboard_for(Bishop, White);
-        assert!(State::has_piece_on_square(bitboard, C1));
-        assert!(State::has_piece_on_square(bitboard, F1));
+        let white_bishop = state.get_bitboard_for(Bishop, White);
+        assert!(white_bishop.squares_occupied(&[C1, F1]));
 
-        let bitboard = state.get_bitboard_for(Bishop, Black);
-        assert!(State::has_piece_on_square(bitboard, C8));
-        assert!(State::has_piece_on_square(bitboard, F8));
+        let black_bishop = state.get_bitboard_for(Bishop, Black);
+        assert!(black_bishop.squares_occupied(&[C8, F8]));
     }
 
     #[test]
     fn test_initial_position_white_rooks() {
         let state: State = State::new();
-        let bitboard = state.get_bitboard_for(Rook, White);
-        assert!(State::has_piece_on_square(bitboard, A1));
-        assert!(State::has_piece_on_square(bitboard, H1));
+        let white_rook = state.get_bitboard_for(Rook, White);
+        assert!(white_rook.squares_occupied(&[A1, H1]));
 
-        let bitboard = state.get_bitboard_for(Rook, Black);
-        assert!(State::has_piece_on_square(bitboard, A8));
-        assert!(State::has_piece_on_square(bitboard, H8));
+        let black_rook = state.get_bitboard_for(Rook, Black);
+        assert!(black_rook.squares_occupied(&[A8, H8]));
     }
 
     #[test]
     fn test_initial_position_white_queen() {
         let state: State = State::new();
-        let bitboard = state.get_bitboard_for(Queen, White);
-        assert!(State::has_piece_on_square(bitboard, D1));
-        let bitboard = state.get_bitboard_for(Queen, Black);
-        assert!(State::has_piece_on_square(bitboard, D8));
+        let white_queen = state.get_bitboard_for(Queen, White);
+        assert!(white_queen.square_occupied(D1));
+        let black_queen = state.get_bitboard_for(Queen, Black);
+        assert!(black_queen.square_occupied(D8));
     }
 
     #[test]
     fn test_initial_position_white_king() {
         let state: State = State::new();
-        let bitboard = state.get_bitboard_for(King, White);
-        assert!(State::has_piece_on_square(bitboard, E1));
-        let bitboard = state.get_bitboard_for(King, Black);
-        assert!(State::has_piece_on_square(bitboard, E8));
+        let white_king = state.get_bitboard_for(King, White);
+        assert!(white_king.square_occupied(E1));
+        let black_king = state.get_bitboard_for(King, Black);
+        assert!(black_king.square_occupied(E8));
     }
 }
